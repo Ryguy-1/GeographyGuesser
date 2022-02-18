@@ -1,4 +1,5 @@
 # Selenium
+from turtle import update
 from selenium.webdriver import Chrome
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -6,24 +7,35 @@ from selenium.webdriver.common.keys import Keys
 import time
 # Wget
 import wget
+# Json
+import json
 # Check if land or sea
 from mpl_toolkits.basemap import Basemap
 bm = Basemap()
+    
+def download_image(lat, long, driver):
+    # Download Image to Image Folder
+    try:
+        src = driver.find_element(By.XPATH, "//*[@id=\"pane\"]/div/div[1]/div/div/div[1]/div[1]/button/img").get_attribute("src")
+        # Check if URL exists and is not in already downloaded list
+        if src != "" and src not in urls_downloaded.keys():
+            wget.download(src, "data/images/" + str(lat) + "_" + str(long) + ".png")
+            urls_downloaded[src] = [lat, long]
+            update_urls_json()
+        else:
+            print("Image Doesn't Exist or Already Downloaded")
+    except:
+        print("No Image Found")
 
-# Latitude -> -90 to 90
-# Longitude -> -180 to 180
-start_lat = -90
-end_lat = 90
-start_long = -180
-end_long = 180
-increment = 0.3
 
-# Loading Wait Time
-load_time = 3
+def update_urls_json():
+    with open(json_location, "w") as f:
+        json.dump(urls_downloaded, f)
 
-# Driver Info
-window_width = 1200
-window_height = 800
+def load_urls_json():
+    with open(json_location, "r") as f:
+        return json.load(f)
+
 
 def initialize_scraper(chromedriver_path):
     # Initialize Driver Instance
@@ -35,8 +47,8 @@ def initialize_scraper(chromedriver_path):
     # Begin Sending Keys
     
     # Iterate over Longitude
-    for i in range(start_lat*10, end_lat*10, int(increment*10)):
-        for j in range(start_long*10, end_long*10, int(increment*10)):
+    for i in range(int(start_lat*10), int(end_lat*10), int(increment*10)):
+        for j in range(int(start_long*10), int(end_long*10), int(increment*10)):
             # Latitude / Longitude
             lat = i/10; long = j/10
             if not bm.is_land(long, lat):
@@ -59,14 +71,27 @@ def initialize_scraper(chromedriver_path):
     # Wait for the page to load
     time.sleep(load_time)
 
-    
-def download_image(lat, long, driver):
-    # Download Image to Image Folder
-    try:
-        wget.download(driver.find_element(By.XPATH, "//*[@id=\"pane\"]/div/div[1]/div/div/div[1]/div[1]/button/img").get_attribute("src"), "data/images/" + str(lat) + "-" + str(long) + ".png")
-    except:
-        print("No Image Found")
 
+# Latitude -> -90 to 90
+# Longitude -> -180 to 180
+start_lat = -19.2
+end_lat = 90
+start_long = -180
+end_long = 180
+increment = 0.3
+
+# Loading Wait Time
+load_time = 2.5
+
+# Driver Info
+window_width = 1200
+window_height = 800
+
+# Urls Downloaded Keep Track
+json_location = "data/urls_downloaded.json"
+# Load urls downloaded
+urls_downloaded = load_urls_json()
+print(f"Urls Downloaded: {len(urls_downloaded)}")
 
 
 if __name__ == "__main__":
