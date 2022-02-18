@@ -1,2 +1,5 @@
 /data/images/*
 /data/urls_downloaded.json
+/model/logs
+/model/model*
+/model/standard_scalar*
