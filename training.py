@@ -2,6 +2,7 @@
 from matplotlib import units
 import tensorflow as tf
 from tensorflow.keras import layers, models, Sequential, optimizers, losses
+import tensorflow.keras as keras
 # Tensorboard
 import tensorboard as tb
 from tensorflow.keras.callbacks import TensorBoard
@@ -22,14 +23,14 @@ from sklearn.preprocessing import MinMaxScaler
 import pickle
 
 # Globals
-image_folder = "data/images_test"
+image_folder = "data/images"
 model_folder = "model"
 resize_size = (250, 250)
 test_size = 0.2
 
 def load_dataset(dataset_directory):
     # Image Locations
-    image_locations = glob.glob(dataset_directory + "/*")[:10_000]
+    image_locations = glob.glob(dataset_directory + "/*")
     # Load Images to Memory
     images_loaded = []
     labels = []
@@ -147,15 +148,22 @@ def train_model(data_x, data_y, test_size):
     log_dir = f"{model_folder}/logs/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     tensorboard_callback = TensorBoard(log_dir=log_dir, histogram_freq=1)
 
+    # Convert to Datasets
+    train_dataset = tf.data.Dataset.from_tensor_slices((train_x, train_y))
+    test_dataset = tf.data.Dataset.from_tensor_slices((test_x, test_y))
+    # Create a generator for the training data
+    train_generator = train_dataset.shuffle(buffer_size=1000).batch(16)
+    # Create a generator for the test data
+    test_generator = test_dataset.batch(16)
+
     # Train Model
     model = CNN_250_250()
     # Save model parameters every epoch by adding a callback that saves the model's weights to disk using the `ModelCheckpoint` callback.
     model.model.fit(
-        train_x,
-        train_y,
+        train_generator,
         batch_size = 16,
         epochs = 2000,
-        validation_data = (test_x, test_y),
+        validation_data = test_generator,
         verbose = 1,
         callbacks = [tensorboard_callback, ModelCheckpoint(model_folder + "/model_250_250.h5", save_best_only=True, save_weights_only=False)]
     )
@@ -206,7 +214,7 @@ if __name__ == "__main__":
     # Test
     model = CNN_250_250()
     model.load_model(model_folder + "/model_250_250.h5")
-    for i in range(0, 10_000, 1):
+    for i in range(0, 10_000, 10):
         predicted, true, image, prediction_raw = test_individual_images(model, i, image_folder)
         print(f"Predicted: {predicted}")
         print(f"True: {true}")
