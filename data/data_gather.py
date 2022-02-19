@@ -67,6 +67,13 @@ def initialize_scraper(chromedriver_path):
             time.sleep(load_time)
             # Download Thumbnail (600 x 400)
             download_image(lat, long, driver)
+        # Reload Driver
+        driver.quit()
+        driver = Chrome(chromedriver_path)
+        driver.get("https://www.google.com/maps/@23.8869203,5.4159443,3z")
+        driver.set_window_size(window_width, window_height)
+        time.sleep(load_time)
+
             
     # Wait for the page to load
     time.sleep(load_time)
@@ -74,7 +81,7 @@ def initialize_scraper(chromedriver_path):
 
 # Latitude -> -90 to 90
 # Longitude -> -180 to 180
-start_lat = 13.2
+start_lat = 18.3
 end_lat = 90
 start_long = -180
 end_long = 180
