@@ -21,6 +21,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 # Pickle
 import pickle
+# Random
+import random
 
 # Globals
 image_folder = "data/images"
@@ -141,9 +143,9 @@ def save_scalar(scalar, scalar_name):
         pickle.dump(scalar, f)
 
 # Load Indieces of Dataset from Image Folder to Memory and Parse into Numpy Arrays
-def load_dataset(dataset_directory, start_index, stop_index):
+def load_dataset(image_locations, start_index, stop_index):
     # Image Locations
-    image_locations = glob.glob(dataset_directory + "/*")[start_index:stop_index]
+    image_locations = image_locations[start_index:stop_index]
 
     # Load Images to Memory
     images_loaded = []
@@ -198,6 +200,11 @@ def load_scalar(scalar_name):
         return pickle.load(f)
 
 if __name__ == "__main__":
+
+    # Get Locations
+    shuffled_image_locations = glob.glob(image_folder + "/*")
+    # Shuffle Locations
+    random.shuffle(shuffled_image_locations)
     
     # Get Total Number of Images
     num_images_training = int(len(glob.glob(image_folder + "/*")) * float(1-test_size))
@@ -213,10 +220,10 @@ if __name__ == "__main__":
     for i in range(0, num_images_training, record_size):
         if i <= num_images_training-record_size:
             # Load Data
-            data_x, data_y = load_dataset(dataset_directory=image_folder, start_index=i, stop_index=i+record_size)
+            data_x, data_y = load_dataset(image_locations=shuffled_image_locations, start_index=i, stop_index=i+record_size)
         else:
             print("Last Training Record")
-            data_x, data_y = load_dataset(dataset_directory=image_folder, start_index=i, stop_index=num_images_training)
+            data_x, data_y = load_dataset(image_locations=shuffled_image_locations, start_index=i, stop_index=num_images_training)
         # Print Shapes
         print(f"Data X Shape: {data_x.shape}")
         print(f"Data Y Shape: {data_y.shape}")
@@ -234,10 +241,10 @@ if __name__ == "__main__":
     for i in range(num_images_training, num_images_training+num_images_test, record_size):
         if i <= num_images_training+num_images_test-record_size:
             # Load Data
-            data_x, data_y = load_dataset(dataset_directory=image_folder, start_index=i, stop_index=i+record_size)
+            data_x, data_y = load_dataset(image_locations=shuffled_image_locations, start_index=i, stop_index=i+record_size)
         else:
             print("Last Testing Record")
-            data_x, data_y = load_dataset(dataset_directory=image_folder, start_index=i, stop_index=num_images_training+num_images_test)
+            data_x, data_y = load_dataset(image_locations=shuffled_image_locations, start_index=i, stop_index=num_images_training+num_images_test)
         # Print Shapes
         print(f"Data X Shape: {data_x.shape}")
         print(f"Data Y Shape: {data_y.shape}")
