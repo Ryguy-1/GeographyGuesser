@@ -35,10 +35,17 @@ def load_dataset(dataset_directory):
     images_loaded = []
     labels = []
     # Iterate and Populate
+    images_loaded_counter = 0
     for file_loc in image_locations:
-        loaded_image = cv2.resize(cv2.imread(file_loc), resize_size)
+        try:
+            loaded_image = cv2.resize(cv2.imread(file_loc), resize_size)
+        except Exception:
+            print("Error Loading Image: " + file_loc)
         images_loaded.append(loaded_image)
         labels.append((float(file_loc.split("\\")[-1].split(".p")[0].split("_")[0]), float(file_loc.split("\\")[-1].split(".p")[0].split("_")[-1])))
+        images_loaded_counter += 1
+        if images_loaded_counter % 1000 == 0:
+            print(f"Loaded {images_loaded_counter} Images")
     # Convert to Numpy Arrays
     images_loaded = np.array(images_loaded, dtype=np.float32)
     labels = np.array(labels, dtype=np.float32)
@@ -123,6 +130,9 @@ class CNN_250_250:
             metrics = ["mse"]
         )
 
+    def summary(self, ):
+        self.model.summary()
+
     def save_model(self, model_name):
         self.model.save(model_name)
     
@@ -158,6 +168,7 @@ def train_model(data_x, data_y, test_size):
 
     # Train Model
     model = CNN_250_250()
+    model.summary()
     # Save model parameters every epoch by adding a callback that saves the model's weights to disk using the `ModelCheckpoint` callback.
     model.model.fit(
         train_generator,
