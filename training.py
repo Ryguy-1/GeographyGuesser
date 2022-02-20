@@ -35,25 +35,31 @@ class CNN_250_250:
         self.input_shape = input_shape
         self.model = Sequential()
 
-        self.model.add(layers.Conv2D(filters = 32, kernel_size = (7, 7), strides=(3, 3), data_format="channels_last", activation=None, input_shape=self.input_shape))
+        self.model.add(layers.Conv2D(filters = 128, kernel_size = (7, 7), strides=(3, 3), data_format="channels_last", activation=None, input_shape=self.input_shape))
         self.model.add(layers.Activation("sigmoid"))
         self.model.add(layers.BatchNormalization())
         self.model.add(layers.Dropout(0.2))
-        assert self.model.output_shape == (None, 82, 82, 32)
+        assert self.model.output_shape == (None, 82, 82, 128)
 
-        self.model.add(layers.Conv2D(filters = 64, kernel_size = (7, 7), strides=(3, 3), data_format="channels_last", activation=None))
+        self.model.add(layers.Conv2D(filters = 128, kernel_size = (7, 7), strides=(3, 3), data_format="channels_last", activation=None))
         self.model.add(layers.Activation("sigmoid"))
         self.model.add(layers.BatchNormalization())
         self.model.add(layers.Dropout(0.2))
-        assert self.model.output_shape == (None, 26, 26, 64)
+        assert self.model.output_shape == (None, 26, 26, 128)
 
-        self.model.add(layers.Conv2D(filters = 64, kernel_size = (5, 5), strides=(3, 3), data_format="channels_last", activation=None))
+        self.model.add(layers.Conv2D(filters = 128, kernel_size = (5, 5), strides=(3, 3), data_format="channels_last", activation=None))
         self.model.add(layers.Activation("sigmoid"))
         self.model.add(layers.BatchNormalization())
         self.model.add(layers.Dropout(0.2))
-        assert self.model.output_shape == (None, 8, 8, 64)
+        assert self.model.output_shape == (None, 8, 8, 128)
 
         self.model.add(layers.Flatten())
+        assert self.model.output_shape == (None, 8192)
+
+        self.model.add(layers.Dense(units=4096, activation=None))
+        self.model.add(layers.Activation("sigmoid"))
+        self.model.add(layers.BatchNormalization())
+        self.model.add(layers.Dropout(0.4))
         assert self.model.output_shape == (None, 4096)
 
         self.model.add(layers.Dense(units=1024, activation=None))
@@ -64,13 +70,7 @@ class CNN_250_250:
 
         self.model.add(layers.Dense(units=256, activation=None))
         self.model.add(layers.Activation("sigmoid"))
-        self.model.add(layers.BatchNormalization())
-        self.model.add(layers.Dropout(0.4))
         assert self.model.output_shape == (None, 256)
-
-        self.model.add(layers.Dense(units=64, activation=None))
-        self.model.add(layers.Activation("sigmoid"))
-        assert self.model.output_shape == (None, 64)
 
         self.model.add(layers.Dense(units=2, activation='sigmoid'))
         assert self.model.output_shape == (None, 2)
@@ -182,51 +182,7 @@ def train_model(records_directory):
         callbacks = [tensorboard_callback, ModelCheckpoint(model_folder + "/model_250_250.h5", save_best_only=True, save_weights_only=False)]
     )
 
-def test_individual_images(model, image_index_in_image_archive, dataset_directory):
-    def load_image(image_index_in_image_archive):
-        image_locations = glob.glob(dataset_directory + "/*")
-        image_loc = None
-        try:
-            image_loc = image_locations[image_index_in_image_archive]
-        except:
-            print("No image found at index: " + str(image_index_in_image_archive))
-        del image_locations
-        # Load Images to Memory
-        loaded_image = [cv2.resize(cv2.imread(image_loc), resize_size)]
-        label = (float(image_loc.split("\\")[-1].split(".p")[0].split("_")[0]), float(image_loc.split("\\")[-1].split(".p")[0].split("_")[-1]))
-        # Convert to Numpy Arrays
-        loaded_image = np.array(loaded_image, dtype=np.float32)
-        label = np.array(label, dtype=np.float32)
-        # Normalize Images
-        loaded_image = loaded_image/255.0
-        # Don't Normalize Labels
-        return loaded_image, label
-        
-    # Load Image
-    image, label_unstandardized = load_image(image_index_in_image_archive)
-    # Predict
-    print(f"Image Shape: {image.shape}")
-    prediction = model.model.predict(image)
-    # Unstandardize Prediction
-    lat_predicted = load_scalar("scalar_lat.p").inverse_transform(prediction[0][0].reshape(1, -1))
-
-    long_predicted = load_scalar("scalar_long.p").inverse_transform(prediction[0][1].reshape(1, -1))
-
-    # Return
-    return np.array([lat_predicted[0][0]-90, long_predicted[0][0]-180], dtype=np.float32), label_unstandardized, image, prediction
-
-
 if __name__ == "__main__":
     # Train Model
     train_model(records_folder)
 
-    # # Test
-    # model = CNN_250_250()
-    # model.load_model(model_folder + "/model_250_250.h5")
-    # for i in range(0, 10_000, 10):
-    #     predicted, true, image, prediction_raw = test_individual_images(model, i, image_folder)
-    #     print(f"Predicted: {predicted}")
-    #     print(f"True: {true}")
-    #     print(f"Prediction Raw: {prediction_raw}")
-    #     cv2.imshow("Image", image[0])
-    #     cv2.waitKey(0)

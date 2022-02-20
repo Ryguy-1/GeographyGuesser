@@ -1,9 +1,7 @@
 /data/images/*
 /data/records/*
-/data/images_test/*
+/data/testing_images/*
 /data/urls_downloaded.json
 /model/logs
 /model/model*
 /model/scalar*
-
-/model_save0
