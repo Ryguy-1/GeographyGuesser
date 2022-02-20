@@ -77,12 +77,30 @@ class CNN_250_250:
 
 
         self.optimizer = optimizers.Adam(learning_rate=0.00001)
-        self.loss_function = losses.MeanSquaredError()
+        # self.loss_function = losses.MeanSquaredError()
+        # Input Two Tensors of the same shape
+        def custom_loss(y_actual, y_pred):
+            lat_pred = y_pred[:, 0]
+            lon_pred = y_pred[:, 1]
+            lat_actual = y_actual[:, 0]
+            lon_actual = y_actual[:, 1]
+            # Calculate sqrt((lat_pred - lat_actual)^2 + (lon_pred - lon_actual)^2)
+            distance_lat_long = tf.sqrt(tf.square(lat_pred - lat_actual) + tf.square(lon_pred - lon_actual))
+            # Convert Lat and Lon to Distance in kilometers
+            distance_lat_long = distance_lat_long * 111.12
+            # Implement Geoguessr Scoring Algorithm (y=4999.91(0.998036)^x)
+            loss = tf.constant(5000, dtype=tf.float32) - tf.constant(5000, dtype=tf.float32) * tf.pow(tf.constant(0.9990, dtype=tf.float32), distance_lat_long)
+            # Reduce Mean of Losses
+            loss = tf.reduce_mean(loss)
+            # Return Loss
+            return loss
 
         self.model.compile(
             optimizer = self.optimizer,
-            loss = self.loss_function,
-            metrics = ["mse"]
+            # loss = self.loss_function,
+            loss = custom_loss,
+            # Custom loss metric
+            metrics = [custom_loss]
         )
 
     def summary(self, ):

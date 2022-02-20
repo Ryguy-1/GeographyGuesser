@@ -31,7 +31,7 @@ model_folder = "model"
 resize_size = (250, 250)
 
 # TF Record Info
-record_size = 10000
+record_size = 100_000
 test_size = 0.2
 
 # From https://towardsdatascience.com/a-practical-guide-to-tfrecords-584536bc786c
@@ -188,7 +188,7 @@ def load_dataset(image_locations, start_index, stop_index):
     standardized_long = standard_scalar_long.transform(labels[:,1].reshape(-1, 1))
     labels[:, 1] = standardized_long.reshape(-1)
 
-    # Save Scalars
+    # Save Scalars TODO: (works good enough, but if using super small tfrecord sizes, this won't be consistent)
     save_scalar(standard_scalar_lat, "scalar_lat.p")
     save_scalar(standard_scalar_long, "scalar_long.p")
 
