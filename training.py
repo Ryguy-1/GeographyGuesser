@@ -158,7 +158,7 @@ def load_tf_records_datasets(epochs, batch_size, records_directory):
 def train_model(records_directory):
 
     # Hyperparameters
-    epochs = 10
+    epochs = 100
     batch_size = 32
 
     log_dir = f"{model_folder}/logs/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -166,7 +166,7 @@ def train_model(records_directory):
 
     
     # Records Datasets
-    test_dataset, train_dataset = load_tf_records_datasets(epochs=epochs, batch_size=batch_size, records_directory=records_directory)
+    train_dataset, test_dataset = load_tf_records_datasets(epochs=epochs, batch_size=batch_size, records_directory=records_directory)
 
 
     # Train Model
@@ -175,8 +175,8 @@ def train_model(records_directory):
     # Save model parameters every epoch by adding a callback that saves the model's weights to disk using the `ModelCheckpoint` callback.
     model.model.fit(
         train_dataset,
-        batch_size = 16,
-        epochs = 2000,
+        batch_size = batch_size,
+        epochs = epochs,
         validation_data = test_dataset,
         verbose = 1,
         callbacks = [tensorboard_callback, ModelCheckpoint(model_folder + "/model_250_250.h5", save_best_only=True, save_weights_only=False)]

@@ -3,4 +3,5 @@ Gathering Data:
     - Run data_gather.py
 
 Training:
-    - ...
+    - Run create_tfrecords.py to convert large image dataset to tfrecord dataset.
+    - Run training.py to train model (standard 0.2 validation split)
