@@ -23,55 +23,10 @@ from sklearn.preprocessing import MinMaxScaler
 import pickle
 
 # Globals
-image_folder = "data/images"
+records_folder = "data/records"
 model_folder = "model"
 resize_size = (250, 250)
 test_size = 0.2
-
-def load_dataset(dataset_directory):
-    # Image Locations
-    image_locations = glob.glob(dataset_directory + "/*")
-    # Load Images to Memory
-    images_loaded = []
-    labels = []
-    # Iterate and Populate
-    images_loaded_counter = 0
-    for file_loc in image_locations:
-        try:
-            loaded_image = cv2.resize(cv2.imread(file_loc), resize_size)
-        except Exception:
-            print("Error Loading Image: " + file_loc)
-        images_loaded.append(loaded_image)
-        labels.append((float(file_loc.split("\\")[-1].split(".p")[0].split("_")[0]), float(file_loc.split("\\")[-1].split(".p")[0].split("_")[-1])))
-        images_loaded_counter += 1
-        if images_loaded_counter % 1000 == 0:
-            print(f"Loaded {images_loaded_counter} Images")
-    # Convert to Numpy Arrays
-    images_loaded = np.array(images_loaded, dtype=np.float32)
-    labels = np.array(labels, dtype=np.float32)
-    # Make All Latitudes Positive
-    labels[:, 0] = labels[:, 0] + 90
-    # make All Longitudes Positive
-    labels[:, 1] = labels[:, 1] + 180
-    # Normalize Images
-    images_loaded = images_loaded/255.0
-    # Normalize Latitude
-    standard_scalar_lat = MinMaxScaler()
-    standard_scalar_lat.fit(labels[:,0].reshape(-1, 1))
-    standardized_lat = standard_scalar_lat.transform(labels[:,0].reshape(-1, 1))
-    labels[:, 0] = standardized_lat.reshape(-1)
-    # Normalize Long (betwen -1 and 1)
-    standard_scalar_long = MinMaxScaler()
-    standard_scalar_long.fit(labels[:,1].reshape(-1, 1))
-    standardized_long = standard_scalar_long.transform(labels[:,1].reshape(-1, 1))
-    labels[:, 1] = standardized_long.reshape(-1)
-    print(labels)
-    # Save Scalars
-    save_scalar(standard_scalar_lat, "scalar_lat.p")
-    save_scalar(standard_scalar_long, "scalar_long.p")
-    print(load_scalar("scalar_long.p").inverse_transform(labels[0, 1].reshape(-1, 1)))
-    # Return
-    return images_loaded, labels
 
 # (250, 250) CNN
 class CNN_250_250:
@@ -139,42 +94,90 @@ class CNN_250_250:
     def load_model(self, model_name):
         self.model = models.load_model(model_name)
 
-def save_scalar(scalar, scalar_name):
-    with open(model_folder + "/" + scalar_name, 'wb') as f:
-        pickle.dump(scalar, f)
-
 def load_scalar(scalar_name):
     with open(model_folder + "/" + scalar_name, 'rb') as f:
         return pickle.load(f)
 
-def train_model(data_x, data_y, test_size):
-    # Split Data
-    train_x, test_x, train_y, test_y = train_test_split(data_x, data_y, test_size=test_size, random_state=42, shuffle=True)
-    print(f"Train Shape: {train_x.shape}")
-    print(f"Test Shape: {test_x.shape}")
-    print(f"Train Label Shape: {train_y.shape}")
-    print(f"Test Label Shape: {test_y.shape}")
+def load_tf_records_datasets(epochs, batch_size, records_directory):
+    # Names of Records
+    test_record_names = glob.glob(records_directory + "/*test*")
+    train_record_names = glob.glob(records_directory + "/*train*")
+    print(test_record_names)
+    print(train_record_names)
+
+    def parse_tfr_element(element):
+        #use the same structure as above; it's kinda an outline of the structure we now want to create
+        data = {
+            'height': tf.io.FixedLenFeature([], tf.int64),
+            'width':tf.io.FixedLenFeature([], tf.int64),
+            # Changed Label to float
+            'label':tf.io.FixedLenFeature([], tf.string),
+            'raw_image' : tf.io.FixedLenFeature([], tf.string),
+            'depth':tf.io.FixedLenFeature([], tf.int64),
+            }
+
+            
+        content = tf.io.parse_single_example(element, data)
+        
+        height = content['height']
+        width = content['width']
+        depth = content['depth']
+        label = content['label']
+        raw_image = content['raw_image']
+        
+        
+        #get our 'feature'-- our image -- and reshape it appropriately
+        feature = tf.io.parse_tensor(raw_image, out_type=tf.float32)
+        feature = tf.reshape(feature, shape=[height,width,depth])
+        # # Parse Label
+        label = tf.io.parse_tensor(label, out_type=tf.float32)
+        label = tf.reshape(label, shape=[2])
+        return (feature, label)
+
+    def get_dataset(filenames, epochs, batch_size):
+        #create the dataset
+        dataset = tf.data.TFRecordDataset(filenames)
+
+        #pass every single feature through our mapping function
+        dataset = dataset.map(
+            parse_tfr_element
+        )
+
+        dataset.prefetch(10)
+        dataset.repeat(epochs)
+        dataset.shuffle(buffer_size=10 * batch_size)
+        dataset = dataset.batch(batch_size, drop_remainder=True)
+
+        return dataset
+    
+    train_records = get_dataset(train_record_names, epochs, batch_size)
+    test_records = get_dataset(test_record_names, epochs, batch_size)   
+
+    return train_records, test_records
+
+def train_model(records_directory):
+
+    # Hyperparameters
+    epochs = 10
+    batch_size = 32
 
     log_dir = f"{model_folder}/logs/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     tensorboard_callback = TensorBoard(log_dir=log_dir, histogram_freq=1)
 
-    # Convert to Datasets
-    train_dataset = tf.data.Dataset.from_tensor_slices((train_x, train_y))
-    test_dataset = tf.data.Dataset.from_tensor_slices((test_x, test_y))
-    # Create a generator for the training data
-    train_generator = train_dataset.shuffle(buffer_size=1000).batch(16)
-    # Create a generator for the test data
-    test_generator = test_dataset.batch(16)
+    
+    # Records Datasets
+    test_dataset, train_dataset = load_tf_records_datasets(epochs=epochs, batch_size=batch_size, records_directory=records_directory)
+
 
     # Train Model
     model = CNN_250_250()
     model.summary()
     # Save model parameters every epoch by adding a callback that saves the model's weights to disk using the `ModelCheckpoint` callback.
     model.model.fit(
-        train_generator,
+        train_dataset,
         batch_size = 16,
         epochs = 2000,
-        validation_data = test_generator,
+        validation_data = test_dataset,
         verbose = 1,
         callbacks = [tensorboard_callback, ModelCheckpoint(model_folder + "/model_250_250.h5", save_best_only=True, save_weights_only=False)]
     )
@@ -214,21 +217,16 @@ def test_individual_images(model, image_index_in_image_archive, dataset_director
 
 
 if __name__ == "__main__":
-    # Load Data
-    data_x, data_y = load_dataset(dataset_directory=image_folder)
-    # Print Shapes
-    print(data_x.shape)
-    print(data_y.shape)
-    # # Train Model
-    train_model(data_x, data_y, test_size)
+    # Train Model
+    train_model(records_folder)
 
-    # Test
-    model = CNN_250_250()
-    model.load_model(model_folder + "/model_250_250.h5")
-    for i in range(0, 10_000, 10):
-        predicted, true, image, prediction_raw = test_individual_images(model, i, image_folder)
-        print(f"Predicted: {predicted}")
-        print(f"True: {true}")
-        print(f"Prediction Raw: {prediction_raw}")
-        cv2.imshow("Image", image[0])
-        cv2.waitKey(0)
+    # # Test
+    # model = CNN_250_250()
+    # model.load_model(model_folder + "/model_250_250.h5")
+    # for i in range(0, 10_000, 10):
+    #     predicted, true, image, prediction_raw = test_individual_images(model, i, image_folder)
+    #     print(f"Predicted: {predicted}")
+    #     print(f"True: {true}")
+    #     print(f"Prediction Raw: {prediction_raw}")
+    #     cv2.imshow("Image", image[0])
+    #     cv2.waitKey(0)
