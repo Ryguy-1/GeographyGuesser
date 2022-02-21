@@ -97,12 +97,19 @@ class CountryClassifierModel:
         self.model = models.load_model(model_name)
 
 def get_class_weights(image_folder):
+    # Get Folders
     folders = glob.glob(image_folder + "/*")
+    # Total number of images
+    total_images = 0
+    for folder in folders:
+        total_images += len(glob.glob(folder + "/*"))
+    # Get Total Classes
+    total_classes = len(folders)
     print(folders)
     class_weights = {}
     for i in range(len(folders)):
-        class_weights[i] = len(glob.glob(folders[i] + "/*"))
-
+        # wj=n_samples / (n_classes * n_samplesj)
+        class_weights[i] = total_images / (total_classes * len(glob.glob(folders[i] + "/*")))
     return class_weights
 
 def train():
@@ -148,5 +155,26 @@ def train():
         )
 
   
+def test():
+    # Load Model
+    cnn = CountryClassifierModel(num_countries=len(glob.glob(images_sorted_by_country_folder + "/*")))
+    cnn.load_model(country_classifier_model_folder + "/country_classifier_250_250.h5")
+    # Plot Confusion Matrix
+    test_dataset = image_dataset_from_directory(images_sorted_by_country_folder,
+                                             label_mode="categorical",
+                                                image_size=resize_size,
+                                                batch_size=32,
+                                                seed=42,
+                                                shuffle=True,
+                                                validation_split=test_size,
+                                                subset="validation",
+                                                color_mode="rgb",
+                                                )
+    predictions = cnn.model.predict(test_dataset)
+    # Tensorflow confusion matrix (tf.math.confusion_matrix)
+    # To be Continued...
+
+
 # Train Model
 train()
+test()
