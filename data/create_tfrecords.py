@@ -31,7 +31,7 @@ model_folder = "model"
 resize_size = (250, 250)
 
 # TF Record Info
-record_size = 100_000
+record_size = 10_000
 test_size = 0.2
 
 # From https://towardsdatascience.com/a-practical-guide-to-tfrecords-584536bc786c

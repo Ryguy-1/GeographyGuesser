@@ -35,17 +35,17 @@ class CNN_250_250:
         self.input_shape = input_shape
         self.model = Sequential()
 
-        self.model.add(layers.Conv2D(filters = 128, kernel_size = (7, 7), strides=(3, 3), data_format="channels_last", activation=None, input_shape=self.input_shape))
+        self.model.add(layers.Conv2D(filters = 16, kernel_size = (7, 7), strides=(3, 3), data_format="channels_last", activation=None, input_shape=self.input_shape))
         self.model.add(layers.Activation("sigmoid"))
         self.model.add(layers.BatchNormalization())
         self.model.add(layers.Dropout(0.2))
-        assert self.model.output_shape == (None, 82, 82, 128)
+        assert self.model.output_shape == (None, 82, 82, 16)
 
-        self.model.add(layers.Conv2D(filters = 128, kernel_size = (7, 7), strides=(3, 3), data_format="channels_last", activation=None))
+        self.model.add(layers.Conv2D(filters = 64, kernel_size = (7, 7), strides=(3, 3), data_format="channels_last", activation=None))
         self.model.add(layers.Activation("sigmoid"))
         self.model.add(layers.BatchNormalization())
         self.model.add(layers.Dropout(0.2))
-        assert self.model.output_shape == (None, 26, 26, 128)
+        assert self.model.output_shape == (None, 26, 26, 64)
 
         self.model.add(layers.Conv2D(filters = 128, kernel_size = (5, 5), strides=(3, 3), data_format="channels_last", activation=None))
         self.model.add(layers.Activation("sigmoid"))
@@ -89,7 +89,7 @@ class CNN_250_250:
             # Convert Lat and Lon to Distance in kilometers
             distance_lat_long = distance_lat_long * 111.12
             # Implement Geoguessr Scoring Algorithm (y=4999.91(0.998036)^x)
-            loss = tf.constant(5000, dtype=tf.float32) - tf.constant(5000, dtype=tf.float32) * tf.pow(tf.constant(0.9990, dtype=tf.float32), distance_lat_long)
+            loss = tf.constant(5000, dtype=tf.float32) - tf.constant(5000, dtype=tf.float32) * tf.pow(tf.constant(0.993, dtype=tf.float32), distance_lat_long)
             # Reduce Mean of Losses
             loss = tf.reduce_mean(loss)
             # Return Loss
@@ -176,8 +176,8 @@ def load_tf_records_datasets(epochs, batch_size, records_directory):
 def train_model(records_directory):
 
     # Hyperparameters
-    epochs = 100
-    batch_size = 32
+    epochs = 2000
+    batch_size = 64
 
     log_dir = f"{model_folder}/logs/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     tensorboard_callback = TensorBoard(log_dir=log_dir, histogram_freq=1)
