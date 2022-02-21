@@ -5,4 +5,4 @@
 
 # Model Ignores
 /models/country_classifier_model/*
-/modelscountry_regression_models/*
+/models/country_regression_models/*

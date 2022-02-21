@@ -41,42 +41,36 @@ class CountryRegressionModel:
         self.input_shape = input_shape
         self.model = Sequential()
 
-        self.model.add(layers.Conv2D(filters = 32, kernel_size = (7, 7), strides=(3, 3), data_format="channels_last", activation=None, input_shape=self.input_shape))
+        self.model.add(layers.Conv2D(filters = 8, kernel_size = (7, 7), strides=(3, 3), data_format="channels_last", activation=None, input_shape=self.input_shape))
         self.model.add(layers.Activation("sigmoid"))
         self.model.add(layers.BatchNormalization())
-        self.model.add(layers.Dropout(0.2))
-        assert self.model.output_shape == (None, 82, 82, 32)
+        self.model.add(layers.Dropout(0.7))
+        assert self.model.output_shape == (None, 82, 82, 8)
 
-        self.model.add(layers.Conv2D(filters = 64, kernel_size = (7, 7), strides=(3, 3), data_format="channels_last", activation=None))
+        self.model.add(layers.Conv2D(filters = 16, kernel_size = (7, 7), strides=(3, 3), data_format="channels_last", activation=None))
         self.model.add(layers.Activation("sigmoid"))
         self.model.add(layers.BatchNormalization())
-        self.model.add(layers.Dropout(0.2))
-        assert self.model.output_shape == (None, 26, 26, 64)
-
-        self.model.add(layers.Conv2D(filters = 128, kernel_size = (5, 5), strides=(3, 3), data_format="channels_last", activation=None))
-        self.model.add(layers.Activation("sigmoid"))
-        self.model.add(layers.BatchNormalization())
-        self.model.add(layers.Dropout(0.2))
-        assert self.model.output_shape == (None, 8, 8, 128)
+        assert self.model.output_shape == (None, 26, 26, 16)
+        # Pool Later
+        self.model.add(layers.MaxPooling2D(pool_size=(2, 2), data_format="channels_last"))
+        # Dropout
+        self.model.add(layers.Dropout(0.5))
+        assert self.model.output_shape == (None, 13, 13, 16)
 
         self.model.add(layers.Flatten())
-        assert self.model.output_shape == (None, 8192)
-
-        self.model.add(layers.Dense(units=4096, activation=None))
-        self.model.add(layers.Activation("sigmoid"))
-        self.model.add(layers.BatchNormalization())
-        self.model.add(layers.Dropout(0.4))
-        assert self.model.output_shape == (None, 4096)
+        assert self.model.output_shape == (None, 13 * 13 * 16)
 
         self.model.add(layers.Dense(units=1024, activation=None))
         self.model.add(layers.Activation("sigmoid"))
         self.model.add(layers.BatchNormalization())
-        self.model.add(layers.Dropout(0.4))
+        self.model.add(layers.Dropout(0.7))
         assert self.model.output_shape == (None, 1024)
 
-        self.model.add(layers.Dense(units=256, activation=None))
+        self.model.add(layers.Dense(units=512, activation=None))
         self.model.add(layers.Activation("sigmoid"))
-        assert self.model.output_shape == (None, 256)
+        self.model.add(layers.BatchNormalization())
+        self.model.add(layers.Dropout(0.5))
+        assert self.model.output_shape == (None, 512)
 
         self.model.add(layers.Dense(units=2, activation='sigmoid'))
         assert self.model.output_shape == (None, 2)
@@ -93,7 +87,7 @@ class CountryRegressionModel:
             # Convert Lat and Lon to Distance in kilometers
             distance_lat_long = distance_lat_long * 111.12
             # Implement Geoguessr Scoring Algorithm (y=4999.91(0.998036)^x) (ish)
-            loss = tf.constant(5000, dtype=tf.float32) - tf.constant(5000, dtype=tf.float32) * tf.pow(tf.constant(0.993, dtype=tf.float32), distance_lat_long)
+            loss = tf.constant(5000, dtype=tf.float32) - tf.constant(5000, dtype=tf.float32) * tf.pow(tf.constant(0.9995, dtype=tf.float32), distance_lat_long)
             # Reduce Mean of Losses
             loss = tf.reduce_mean(loss)
             # Return Loss
@@ -184,7 +178,9 @@ def load_scalar(scalar_name, model_folder):
 def train_model(model, images_loaded, labels, epochs, batch_size, model_folder):
 
     # Train Test Split
-    train_images, test_images, train_labels, test_labels = train_test_split(images_loaded, labels, test_size=0.2, random_state=42)
+    train_images, test_images, train_labels, test_labels = train_test_split(images_loaded, labels, train_size=0.8, test_size=0.2, random_state=42)
+    print(train_images.shape)
+    print(test_images.shape)
 
     # Train Model
     model.model.fit(
@@ -195,7 +191,7 @@ def train_model(model, images_loaded, labels, epochs, batch_size, model_folder):
         validation_data = (test_images, test_labels),
         verbose = 1,
         callbacks = [ModelCheckpoint(model_folder + "/regression_250_250.h5", save_best_only=True, save_weights_only=False)],
-        )
+    )
 
 
 
@@ -210,7 +206,16 @@ if __name__ == "__main__":
         model_folder = country_regression_model_folder + "/" + country_folder.split("\\")[-1]
         # Get Image Locations
         image_locatons = glob.glob(country_folder + "/*")
+        # Check if image locations greater than 1
+        if len(image_locatons) == 1:
+            # Write Text File to Indicate Latitude and Longitude of One Image
+            with open(model_folder + "/no_images.txt", 'w') as f:
+                lat = image_locatons[0].split('\\')[-1].split(".p")[0].split('_')[0]
+                long = image_locatons[0].split('\\')[-1].split(".p")[0].split('_')[1]
+                string_write = f"{lat}, {long}"
+                f.write(string_write)
+            continue
         # Load Dataset
         images_loaded, labels = load_dataset(image_locatons, model_folder)
         # Train Model
-        train_model(CountryRegressionModel(), images_loaded, labels, 1000, 32, model_folder)
+        train_model(CountryRegressionModel(), images_loaded, labels, 200, 16, model_folder)
