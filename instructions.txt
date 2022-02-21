@@ -1,7 +1,0 @@
-Gathering Data:
-    - Create file "urls_downloaded.json" with empty {} in data directory.
-    - Run data_gather.py
-
-Training:
-    - Run create_tfrecords.py to convert large image dataset to tfrecord dataset.
-    - Run training.py to train model (standard 0.2 validation split)

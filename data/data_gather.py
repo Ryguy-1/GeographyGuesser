@@ -81,7 +81,7 @@ def initialize_scraper(chromedriver_path):
 
 # Latitude -> -90 to 90
 # Longitude -> -180 to 180
-start_lat = 45.3
+start_lat = -90
 end_lat = 90
 start_long = -180
 end_long = 180

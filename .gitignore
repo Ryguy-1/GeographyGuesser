@@ -1,7 +1,8 @@
+# Data Ignores
 /data/images/*
-/data/records/*
-/data/testing_images/*
+/data/images_sorted_by_country/*
 /data/urls_downloaded.json
-/model/logs
-/model/model*
-/model/scalar*
+
+# Model Ignores
+/models/country_classifier_model/*
+/modelscountry_regression_models/*

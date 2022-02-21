@@ -22,10 +22,9 @@ from sklearn.preprocessing import MinMaxScaler
 # Pickle
 import pickle
 
-model_folder = "model"
+model_folder = "models/country_regression_models/argentina"
 resize_size = (250, 250)
-test_image_folder = "data/testing_images"
-real_image_folder = "data/images"
+real_image_folder = "data/images_sorted_by_country/argentina"
 
 def load_scalar(scalar_name):
     with open(model_folder + "/" + scalar_name, 'rb') as f:
@@ -69,7 +68,6 @@ def test_individual_images(model, image_index_in_image_archive, dataset_director
     # Return
     return np.array([lat_predicted[0][0]-90, long_predicted[0][0]-180], dtype=np.float32), label_unstandardized, image, prediction
 
-# Input Two Tensors of the same shape
 def custom_loss(y_actual, y_pred):
     lat_pred = y_pred[:, 0]
     lon_pred = y_pred[:, 1]
@@ -79,8 +77,8 @@ def custom_loss(y_actual, y_pred):
     distance_lat_long = tf.sqrt(tf.square(lat_pred - lat_actual) + tf.square(lon_pred - lon_actual))
     # Convert Lat and Lon to Distance in kilometers
     distance_lat_long = distance_lat_long * 111.12
-    # Implement Geoguessr Scoring Algorithm (y=4999.91(0.998036)^x)
-    loss = tf.constant(5000, dtype=tf.float32) - tf.constant(5000, dtype=tf.float32) * tf.pow(tf.constant(0.996, dtype=tf.float32), distance_lat_long)
+    # Implement Geoguessr Scoring Algorithm (y=4999.91(0.998036)^x) (ish)
+    loss = tf.constant(5000, dtype=tf.float32) - tf.constant(5000, dtype=tf.float32) * tf.pow(tf.constant(0.993, dtype=tf.float32), distance_lat_long)
     # Reduce Mean of Losses
     loss = tf.reduce_mean(loss)
     # Return Loss
@@ -88,10 +86,10 @@ def custom_loss(y_actual, y_pred):
 
 if __name__ == "__main__":
     # Load Model
-    model = keras.models.load_model(model_folder + "/model_250_250.h5", custom_objects={'custom_loss': custom_loss})
+    model = keras.models.load_model(model_folder + "/regression_250_250.h5", custom_objects={'custom_loss': custom_loss})
     for i in range(0, 20000, 1):
         # Test Individual Image
-        predicted, label_unstandardized, image, prediction_raw = test_individual_images(model, i, test_image_folder)
+        predicted, label_unstandardized, image, prediction_raw = test_individual_images(model, i, real_image_folder)
 
         # Print Information
         print("Predicted: " + str(predicted))
