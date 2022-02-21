@@ -38,17 +38,17 @@ class CountryClassifierModel:
         self.num_countries = num_countries
         self.model = Sequential()
 
-        self.model.add(layers.Conv2D(filters = 32, kernel_size = (7, 7), strides=(3, 3), data_format="channels_last", activation=None, input_shape=self.input_shape))
+        self.model.add(layers.Conv2D(filters = 128, kernel_size = (7, 7), strides=(3, 3), data_format="channels_last", activation=None, input_shape=self.input_shape))
         self.model.add(layers.Activation("relu"))
         self.model.add(layers.BatchNormalization())
-        self.model.add(layers.Dropout(0.5))
-        assert self.model.output_shape == (None, 82, 82, 32)
+        self.model.add(layers.Dropout(0.7))
+        assert self.model.output_shape == (None, 82, 82, 128)
 
-        self.model.add(layers.Conv2D(filters = 64, kernel_size = (7, 7), strides=(3, 3), data_format="channels_last", activation=None))
+        self.model.add(layers.Conv2D(filters = 128, kernel_size = (7, 7), strides=(3, 3), data_format="channels_last", activation=None))
         self.model.add(layers.Activation("relu"))
         self.model.add(layers.BatchNormalization())
-        self.model.add(layers.Dropout(0.5))
-        assert self.model.output_shape == (None, 26, 26, 64)
+        self.model.add(layers.Dropout(0.6))
+        assert self.model.output_shape == (None, 26, 26, 128)
 
         self.model.add(layers.Conv2D(filters = 128, kernel_size = (5, 5), strides=(3, 3), data_format="channels_last", activation=None))
         self.model.add(layers.Activation("relu"))
@@ -62,13 +62,13 @@ class CountryClassifierModel:
         self.model.add(layers.Dense(units=4096, activation=None))
         self.model.add(layers.Activation("relu"))
         self.model.add(layers.BatchNormalization())
-        self.model.add(layers.Dropout(0.3))
+        self.model.add(layers.Dropout(0.4))
         assert self.model.output_shape == (None, 4096)
 
         self.model.add(layers.Dense(units=1024, activation=None))
         self.model.add(layers.Activation("relu"))
         self.model.add(layers.BatchNormalization())
-        self.model.add(layers.Dropout(0.3))
+        self.model.add(layers.Dropout(0.4))
         assert self.model.output_shape == (None, 1024)
 
         self.model.add(layers.Dense(units=256, activation=None))
@@ -78,7 +78,7 @@ class CountryClassifierModel:
         self.model.add(layers.Dense(units=self.num_countries, activation='softmax'))
         assert self.model.output_shape == (None, num_countries)
 
-        self.optimizer = optimizers.Adam(learning_rate=0.000005)
+        self.optimizer = optimizers.Adam(learning_rate=0.00001)
         self.loss_function = losses.CategoricalCrossentropy()
 
         self.model.compile(
