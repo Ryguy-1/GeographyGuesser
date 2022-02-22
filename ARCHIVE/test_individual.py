@@ -22,9 +22,9 @@ from sklearn.preprocessing import MinMaxScaler
 # Pickle
 import pickle
 
-model_folder = "models/country_regression_models/argentina"
+model_folder = "models/country_regression_models/US"
 resize_size = (250, 250)
-real_image_folder = "data/images_sorted_by_country/argentina"
+real_image_folder = "data/images_sorted_by_country/US"
 
 def load_scalar(scalar_name):
     with open(model_folder + "/" + scalar_name, 'rb') as f:
