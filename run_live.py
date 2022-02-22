@@ -142,7 +142,7 @@ def custom_loss(y_actual, y_pred):
     # Convert Lat and Lon to Distance in kilometers
     distance_lat_long = distance_lat_long * 111.12
     # Implement Geoguessr Scoring Algorithm (y=4999.91(0.998036)^x) (ish)
-    loss = tf.constant(5000, dtype=tf.float32) - tf.constant(5000, dtype=tf.float32) * tf.pow(tf.constant(0.9995, dtype=tf.float32), distance_lat_long)
+    loss = tf.constant(5000, dtype=tf.float32) - tf.constant(5000, dtype=tf.float32) * tf.pow(tf.constant(0.998, dtype=tf.float32), distance_lat_long)
     # Reduce Mean of Losses
     loss = tf.reduce_mean(loss)
     # Return Loss
