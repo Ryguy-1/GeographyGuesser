@@ -23,6 +23,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 # Pickle
 import pickle
+# Matplotlib
+import matplotlib.pyplot as plt
 
 # Globals
 images_sorted_by_country_folder = "data/images_sorted_by_country"
@@ -138,6 +140,7 @@ def train():
                                                 color_mode="rgb",
                                                 )
     
+
     # Get Class Weights (Weight All Classes Equally)
     # (Assumes image_dataset_from_directory orders labels same as folders with glob)
     class_weights = get_class_weights(images_sorted_by_country_folder)
@@ -177,4 +180,4 @@ def test():
 
 # Train Model
 train()
-test()
+# test()
