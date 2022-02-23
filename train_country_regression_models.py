@@ -190,7 +190,7 @@ def train_model(model, images_loaded, labels, epochs, batch_size, model_folder):
         epochs = epochs,
         validation_data = (test_images, test_labels),
         verbose = 1,
-        callbacks = [ModelCheckpoint(model_folder + "/regression_250_250.h5", save_best_only=True, save_weights_only=False)],
+        callbacks = [ModelCheckpoint(model_folder + "/regression_250_250.h5", save_best_only=True, save_weights_only=False, monitor='val_loss', mode='min')],
     )
 
 

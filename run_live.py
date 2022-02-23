@@ -27,6 +27,8 @@ from sklearn.preprocessing import MinMaxScaler
 import pickle
 # Keyboard
 import keyboard
+# OS
+import os
 
 ###############################
 # Number Suggestions
@@ -117,7 +119,20 @@ def get_likely_coordinates(top_countries):
     # Predict Each Image Coordinates Assuming it's in each Country, then average them together
     country_coordinates = {}
     for country_folder in matching_folders:
-        model = keras.models.load_model(country_folder + "/regression_250_250.h5", custom_objects={'custom_loss': custom_loss})
+        # Check if country folder has no_images.txt
+        if os.path.isfile(country_folder + "/no_images.txt"):
+            # Read No Images File
+            with open(country_folder + "/no_images.txt", 'r') as f:
+                no_images = f.read() # Ex: 42.6, 1.8
+                # Split into Lat and Long
+                lat_long_arr = no_images.split(', ')
+                lat = float(lat_long_arr[0])
+                long = float(lat_long_arr[1])
+                # Add to Dictionary
+                country_coordinates[country_folder.split('\\')[-1]] = [lat, long]
+                continue
+        else:   
+            model = keras.models.load_model(country_folder + "/regression_250_250.h5", custom_objects={'custom_loss': custom_loss})
         lats = []; longs = []
         for image_location in glob.glob(images_to_analyze_folder + "/*"):
             coord = test_individual_images(model, image_location, country_folder)

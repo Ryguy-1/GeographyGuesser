@@ -19,6 +19,7 @@ import numpy as np
 import cv2
 # Scikit-Learn traintestsplit
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import ConfusionMatrixDisplay
 # Scikit-Learn MinMaxScaler
 from sklearn.preprocessing import MinMaxScaler
 # Pickle
@@ -153,7 +154,7 @@ def train():
         epochs = 2000,
         validation_data = dataset_test,
         verbose = 1,
-        callbacks = [ModelCheckpoint(country_classifier_model_folder + "/country_classifier_250_250.h5", save_best_only=True, save_weights_only=False)],
+        callbacks = [ModelCheckpoint(country_classifier_model_folder + "/country_classifier_250_250.h5", save_best_only=True, save_weights_only=False, monitor='val_accuracy', mode='max')],
         class_weight = class_weights,
         )
 
@@ -164,7 +165,7 @@ def test():
     cnn.load_model(country_classifier_model_folder + "/country_classifier_250_250.h5")
     # Plot Confusion Matrix
     test_dataset = image_dataset_from_directory(images_sorted_by_country_folder,
-                                             label_mode="categorical",
+                                                label_mode="categorical",
                                                 image_size=resize_size,
                                                 batch_size=32,
                                                 seed=42,
@@ -174,10 +175,18 @@ def test():
                                                 color_mode="rgb",
                                                 )
     predictions = cnn.model.predict(test_dataset)
-    # Tensorflow confusion matrix (tf.math.confusion_matrix)
-    # To be Continued...
+    predictions = np.array([np.argmax(pred) for pred in predictions], dtype=np.int32)
+    print(predictions.shape)
+    labels = np.concatenate([y for x, y in test_dataset], axis=0)
+    labels = np.array([np.argmax(label) for label in labels], dtype=np.int32)
+    print(labels.shape)
+    print(f"Labels: {labels[0]}")
+    print(f"Predictions: {predictions[0]}")
+    # Plot Confusion Matrix
+    ConfusionMatrixDisplay.from_predictions(labels, predictions)
+    plt.show()
 
 
 # Train Model
-train()
-# test()
+# train()
+test()
