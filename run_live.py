@@ -36,7 +36,7 @@ num_suggestions = 5
 uses_mean_coords = True
 key_activate = 'p'
 # None if world, otherwise put in country code to limit search
-just_one_country = "US"
+just_one_country = None
 ###############################
 
 classification_model_path = "models/country_classifier_model/country_classifier_250_250.h5"
@@ -175,6 +175,7 @@ def run_live():
             if just_one_country is None:
                 top_countries = get_likely_countries(model)
                 coord_suggestions = get_likely_coordinates(top_countries)
+                print(top_countries)
                 print(coord_suggestions)
             else:
                 coord_suggestions = get_likely_coordinates([(just_one_country, 1)])        
