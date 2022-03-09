@@ -1,13 +1,12 @@
 from google.cloud import vision
 import io
 import os
-from matplotlib.pyplot import text
 from spacy_langdetect import LanguageDetector
 import spacy
 from spacy.language import Language
 import json
 
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "C:\\Users\\Ryland Birchmeier\\Documents\\google_cloud_access.json"
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "C:\\Users\\rylan\\Documents\\google_cloud_auth.json"
 
 # Load Once
 nlp = spacy.load("en_core_web_sm")
