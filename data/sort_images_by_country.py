@@ -3,6 +3,7 @@ import glob
 from socketserver import ThreadingTCPServer
 import reverse_geocoder
 import shutil
+import json
 
 # Globals
 raw_image_folder = "data/images"
@@ -10,6 +11,9 @@ sorted_images_folder = "data/images_sorted_by_country"
 
 # Image Locations
 image_locations = glob.glob(raw_image_folder + "/*")
+
+# Countries in Geoguesser
+geoguesser_countries = json.load(open('data/countries_in_geoguesser.json')).keys()
 
 # Iterate Through Images and Sort by Country
 transfer_counter = 0
@@ -21,6 +25,9 @@ for file_loc in image_locations:
         # Get Country of Image
         location = reverse_geocoder.search((lat, long), mode=1)
         country = location[0]['cc']
+        # Check to Make sure it's a geoguesser country
+        if country not in geoguesser_countries:
+            continue
         if not os.path.exists(sorted_images_folder + "/" + country):
             os.makedirs(sorted_images_folder + "/" + country)
         # Make Copy of Image in New Folder
@@ -30,5 +37,3 @@ for file_loc in image_locations:
             print("Transfered: " + str(transfer_counter) + " Images")
     except:
         print("Error: " + file_loc)
-
-

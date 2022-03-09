@@ -29,6 +29,8 @@ import pickle
 import keyboard
 # OS
 import os
+# Json
+import json
 
 ###############################
 # Number Suggestions
@@ -43,6 +45,9 @@ classification_model_path = "models/country_classifier_model/country_classifier_
 regression_folder_path = "models/country_regression_models"
 images_to_analyze_folder = "live_images"
 resize_size = (250, 250)
+
+# Countries in Geoguesser
+geoguesser_countries = json.load(open('data/countries_in_geoguesser.json')).keys()
 
 def get_likely_countries(model):
     

@@ -41,17 +41,17 @@ class CountryClassifierModel:
         self.num_countries = num_countries
         self.model = Sequential()
 
-        self.model.add(layers.Conv2D(filters = 128, kernel_size = (7, 7), strides=(3, 3), data_format="channels_last", activation=None, input_shape=self.input_shape))
+        self.model.add(layers.Conv2D(filters = 32, kernel_size = (7, 7), strides=(3, 3), data_format="channels_last", activation=None, input_shape=self.input_shape))
         self.model.add(layers.Activation("relu"))
         self.model.add(layers.BatchNormalization())
         self.model.add(layers.Dropout(0.7))
-        assert self.model.output_shape == (None, 82, 82, 128)
+        assert self.model.output_shape == (None, 82, 82, 32)
 
-        self.model.add(layers.Conv2D(filters = 128, kernel_size = (7, 7), strides=(3, 3), data_format="channels_last", activation=None))
+        self.model.add(layers.Conv2D(filters = 64, kernel_size = (7, 7), strides=(3, 3), data_format="channels_last", activation=None))
         self.model.add(layers.Activation("relu"))
         self.model.add(layers.BatchNormalization())
         self.model.add(layers.Dropout(0.6))
-        assert self.model.output_shape == (None, 26, 26, 128)
+        assert self.model.output_shape == (None, 26, 26, 64)
 
         self.model.add(layers.Conv2D(filters = 128, kernel_size = (5, 5), strides=(3, 3), data_format="channels_last", activation=None))
         self.model.add(layers.Activation("relu"))
@@ -81,7 +81,7 @@ class CountryClassifierModel:
         self.model.add(layers.Dense(units=self.num_countries, activation='softmax'))
         assert self.model.output_shape == (None, num_countries)
 
-        self.optimizer = optimizers.Adam(learning_rate=0.00001)
+        self.optimizer = optimizers.Adam(learning_rate=0.001)
         self.loss_function = losses.CategoricalCrossentropy()
 
         self.model.compile(
@@ -123,7 +123,7 @@ def train():
     dataset_train = image_dataset_from_directory(images_sorted_by_country_folder,
                                            label_mode="categorical",
                                            image_size=resize_size,
-                                           batch_size=32,
+                                           batch_size=256,
                                            seed=42,
                                            shuffle=True,
                                            validation_split=test_size,
@@ -133,7 +133,7 @@ def train():
     dataset_test = image_dataset_from_directory(images_sorted_by_country_folder,
                                                 label_mode="categorical",
                                                 image_size=resize_size,
-                                                batch_size=32,
+                                                batch_size=256,
                                                 seed=42,
                                                 shuffle=True,
                                                 validation_split=test_size,
@@ -150,7 +150,7 @@ def train():
     # Train Model
     cnn.model.fit(
         x = dataset_train,
-        batch_size = 32,
+        batch_size = 256,
         epochs = 2000,
         validation_data = dataset_test,
         verbose = 1,
@@ -158,7 +158,7 @@ def train():
         class_weight = class_weights,
         )
 
-  
+
 def test():
     # Load Model
     cnn = CountryClassifierModel(num_countries=len(glob.glob(images_sorted_by_country_folder + "/*")))
@@ -167,7 +167,7 @@ def test():
     test_dataset = image_dataset_from_directory(images_sorted_by_country_folder,
                                                 label_mode="categorical",
                                                 image_size=resize_size,
-                                                batch_size=32,
+                                                batch_size=256,
                                                 seed=42,
                                                 shuffle=True,
                                                 validation_split=test_size,
@@ -188,5 +188,5 @@ def test():
 
 
 # Train Model
-# train()
-test()
+train()
+# test()
