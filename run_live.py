@@ -88,12 +88,13 @@ def get_likely_countries(model):
             top_countries_text[country] = score
 
     # =========================Combination=========================
+    top_countries_general = {}
     for country, score in top_countries_text.items():
         if country in top_countries_nn:
-            top_countries_nn[country] += score
+            top_countries_general[country] = top_countries_nn[country]
     
     # Sort By Confidence Levels
-    top_countries = sorted(top_countries_nn.items(), key=lambda x: x[1], reverse=True)[:num_suggestions]
+    top_countries = sorted(top_countries_general.items(), key=lambda x: x[1], reverse=True)[:num_suggestions]
     # Return Top Countries
     return top_countries
 
