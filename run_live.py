@@ -1,14 +1,7 @@
 # Tensorflow 2.7.0
-from re import T
-from matplotlib import units
 import tensorflow as tf
-from tensorflow.keras import layers, models, Sequential, optimizers, losses
 import tensorflow.keras as keras
 from tensorflow.keras.utils import image_dataset_from_directory
-# Tensorboard
-import tensorboard as tb
-from tensorflow.keras.callbacks import TensorBoard
-from tensorflow.keras.callbacks import ModelCheckpoint
 # Datetime
 import datetime
 # Time
@@ -19,10 +12,6 @@ import glob
 import numpy as np
 # OpenCV
 import cv2
-# Scikit-Learn traintestsplit
-from sklearn.model_selection import train_test_split
-# Scikit-Learn MinMaxScaler
-from sklearn.preprocessing import MinMaxScaler
 # Pickle
 import pickle
 # Keyboard
@@ -31,6 +20,10 @@ import keyboard
 import os
 # Json
 import json
+# Mss
+import mss
+# Text Country 
+from specified_classification.text_classification.image_with_text_to_country import text_country_identification
 
 ###############################
 # Number Suggestions
@@ -51,6 +44,8 @@ geoguesser_countries = json.load(open('data/countries_in_geoguesser.json')).keys
 
 def get_likely_countries(model):
     
+
+    # =========================NN CLASSIFICATION =========================
     # Country Folders
     country_folders = glob.glob('data/images_sorted_by_country/*')
     # Load Image Dataset
@@ -62,26 +57,43 @@ def get_likely_countries(model):
                                            seed=42,
                                            color_mode="rgb")
     # Initialize Top Countries
-    top_countries = {}
+    top_countries_nn = {}
     # Test Each Image
     for tensor in dataset.take(1):
         tensor_list = tensor.numpy()
         for tensor in tensor_list:
             # Run Through Model
             prediction = model.predict(tf.expand_dims(tensor, axis=0))
-
             # Print Country Prediction
-            for i in range(5):
+            for i in range(len(prediction[0])):
                 likely_index = np.argsort(prediction[0])[-(i+1)]
                 country_name = country_folders[likely_index].split('\\')[-1]
                 confidence = prediction[0][likely_index]
                 # Country Name, Confidence
-                if country_name in top_countries.keys():
-                    top_countries[country_name] += confidence
+                if country_name in top_countries_nn.keys():
+                    top_countries_nn[country_name] += confidence
                 else:
-                    top_countries[country_name] = confidence
+                    top_countries_nn[country_name] = confidence
+
+    # =========================TEXT CLASSIFICATION =========================
+    top_countries_text = {}
+    for image_loc in glob.glob(images_to_analyze_folder + "/*"):
+        # Get Countries from Text With Score
+        countries, score = text_country_identification(image_loc)
+        # If No Text, Continue
+        if countries is None and score is None:
+            continue
+        # If Text, Add to Countries
+        for country in countries:
+            top_countries_text[country] = score
+
+    # =========================Combination=========================
+    for country, score in top_countries_text.items():
+        if country in top_countries_nn:
+            top_countries_nn[country] += score
+    
     # Sort By Confidence Levels
-    top_countries = sorted(top_countries.items(), key=lambda x: x[1], reverse=True)[:num_suggestions]
+    top_countries = sorted(top_countries_nn.items(), key=lambda x: x[1], reverse=True)[:num_suggestions]
     # Return Top Countries
     return top_countries
 
@@ -149,8 +161,6 @@ def get_likely_coordinates(top_countries):
         else:
             country_coordinates[country_folder.split('\\')[-1]] = [[lat, long] for lat, long in zip(lats, longs)]
     return country_coordinates
-                
-    
             
 def custom_loss(y_actual, y_pred):
     lat_pred = y_pred[:, 0]
@@ -162,7 +172,7 @@ def custom_loss(y_actual, y_pred):
     # Convert Lat and Lon to Distance in kilometers
     distance_lat_long = distance_lat_long * 111.12
     # Implement Geoguessr Scoring Algorithm (y=4999.91(0.998036)^x) (ish)
-    loss = tf.constant(5000, dtype=tf.float32) - tf.constant(5000, dtype=tf.float32) * tf.pow(tf.constant(0.998, dtype=tf.float32), distance_lat_long)
+    loss = tf.constant(5000, dtype=tf.float32) - tf.constant(5000, dtype=tf.float32) * tf.pow(tf.constant(0.999, dtype=tf.float32), distance_lat_long)
     # Reduce Mean of Losses
     loss = tf.reduce_mean(loss)
     # Return Loss
@@ -171,6 +181,14 @@ def custom_loss(y_actual, y_pred):
 def load_scalar(scalar_path):
     with open(scalar_path, 'rb') as f:
         return pickle.load(f)
+
+# Not Using Yet
+def get_screen(x_res, y_res):
+    monitor = {'top': 0, 'left': 0, 'width': x_res, 'height': y_res}
+    with mss as sct:
+        # Get Screen Frame
+        frame = np.array(sct.grab(monitor))
+    return frame
 
 def run_live():
     # Load Model
@@ -185,7 +203,7 @@ def run_live():
             else:
                 coord_suggestions = get_likely_coordinates([(just_one_country, 1)])        
                 print(coord_suggestions)                                                                                                                                        
-        time.sleep(0.01)
+        time.sleep(0.05)
 
 
 if __name__ == "__main__":                            

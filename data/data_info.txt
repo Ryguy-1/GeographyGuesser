@@ -1,5 +1,11 @@
 - "images/" is populated through "data_gather.py" which gathers images
+            If possible, it is recommended to sort through data collected by hand discarding an image if:
+                1) image is in 2d
+                2) image does not include landscape, city, or language
+                3) image is modified (filters, etc.)
 - "images_sorted_by_country/" is populated through "sort_images_by_country.py"
     - These images are used to train classification model and regression models per country
 
 - *Tip* -> All Downloaded Image Data can be Mapped with "visualize_data.py"
+- *Tip* -> All Sorted Image Data can be visualized for class imbalance with "visualize_class_imbalance.py" -> 
+            This is corrected for in large part by weighted classes in "train_country_classifier.py" -> large batch sizes preferred

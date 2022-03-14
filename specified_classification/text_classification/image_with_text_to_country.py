@@ -6,7 +6,7 @@ import spacy
 from spacy.language import Language
 import json
 
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "C:\\Users\\rylan\\Documents\\google_cloud_auth.json"
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "C:\\Users\\Ryland Birchmeier\\Documents\\google_cloud_auth.json"
 
 # Load Once
 nlp = spacy.load("en_core_web_sm")
@@ -48,19 +48,19 @@ def get_lang_detector(nlp, name):
     return lang_detect
 
 def get_language_from_text(text):
-    
-    Language.factory("language_detector", func=get_lang_detector)
-    nlp.add_pipe('language_detector', last=True)
     doc = nlp(text)
     return doc._.language
 
+# Define Once
+Language.factory("language_detector", func=get_lang_detector)
+nlp.add_pipe('language_detector', last=True)
 
 def text_country_identification(image_loc):
     text = detect_text(image_loc)
-    print(text)
     if text is not None:
         language_dict = get_language_from_text(text)
         language_code = language_dict['language']
+        score = language_dict['score']
         # Find Matching Countries to Language
         matched_countries = []
         language_mapping_dict = json.load(open('data/country_to_languages.json'))
@@ -69,8 +69,6 @@ def text_country_identification(image_loc):
                 if language == language_code:
                     if country_code in geoguesser_countries:
                         matched_countries.append(country_code)
-        return matched_countries
+        return matched_countries, score
     else:
-        return None
-
-print(text_country_identification("live_images/image.jpg"))
+        return None, None
