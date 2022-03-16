@@ -1,6 +1,7 @@
 # Data Ignores
 /data/images/*
 /data/images_sorted_by_country/*
+/data/images_sorted_by_continent/*
 /data/urls_downloaded.json
 
 # Model Ignores
