@@ -81,10 +81,11 @@ def detect_text(path):
 def geolocation_and_language_from_image_location(image_loc, min_valid_phrase_length = 6):
     # Detect All Text In Image
     text_all, phrase_list, language = detect_text(image_loc)
-    print(f"Found Text: {text_all}")
     # If None, return None
     if text_all is None and phrase_list is None and language is None:
         return None, None
+    print(f"Found Text: {text_all}")
+    print(f"Language is {language}")
     # Delete All Phrases less than Specified Length
     phrase_list = [phrase for phrase in phrase_list if len(phrase) >= min_valid_phrase_length]
     # Countries Found (Parallel Lists for Locations and Languages)

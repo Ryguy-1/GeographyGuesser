@@ -173,18 +173,24 @@ def get_likely_countries(custom_classification_model):
 # ---------------------Helper Methods--------------------
 
 # Displays Top Guesses Using Google Maps
-def display_specific_locations(specific_locations, num_displayed):
+def display_specific_locations(specific_locations, num_displayed_max):
+    # Calculate how Many to Show
+    shown = 0
+    if num_displayed_max < len(specific_locations):
+        shown = num_displayed_max
+    else:
+        shown = len(specific_locations)
     # Resolution
     res_x = 2560; res_y = 1440
     # Initialize Drivers
-    drivers = [Chrome("C:\\Selenium\\chromedriver.exe") for i in range(num_displayed)]
+    drivers = [Chrome("C:\\Selenium\\chromedriver.exe") for i in range(shown)]
     # All Open Google Maps
     for i in range(len(drivers)):
         driver = drivers[i]
-        driver.set_window_size(res_x, int(res_y/num_displayed))
-        driver.set_window_position(0, int(res_y/num_displayed)*i)
+        driver.set_window_size(res_x, int(res_y/num_displayed_max))
+        driver.set_window_position(0, int(res_y/num_displayed_max)*i)
     # All Search Individual Locations and Zoom Out
-    for i in range(len(drivers)):
+    for i in range(shown):
         driver = drivers[i]
         # Search
         driver.get("https://www.google.com/maps")
