@@ -31,9 +31,12 @@ from specified_classification.text_classification.image_with_text_to_country_new
 from selenium.webdriver import Chrome
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 
 # Continent Classificaiton Model
-classification_model_path = "models/continent_classifier_model/continent_classifier_250_250.h5"
+continent_nn_model_path = "models/continent_classifier_model/continent_classifier_250_250.h5"
+flag_nn_model_path = "models/flag_classifier_model/flag_classifier_250_250.h5"
 # Live Images
 images_to_analyze_folder = "live_images"
 # Resizing Size for Image Folder
@@ -41,6 +44,7 @@ resize_size = (150, 150)
 
 # Countries in Geoguesser
 geoguesser_countries = json.load(open('data/countries_in_geoguesser.json')).keys()
+geoguesser_countries_full_map = json.load(open('data/countries_in_geoguesser.json'))
 
 # Country to Languages
 country_to_lang_arr_map = json.load(open('data/country_to_languages.json'))
@@ -49,7 +53,9 @@ country_to_lang_arr_map = json.load(open('data/country_to_languages.json'))
 
 def run_live():
     # Load Model
-    custom_classification_model = keras.models.load_model(classification_model_path)
+    continent_nn = keras.models.load_model(continent_nn_model_path)
+    flags_nn = keras.models.load_model(flag_nn_model_path)
+
 
     # Max Images
     max_locations_shown = 2
@@ -68,10 +74,13 @@ def run_live():
             print(); print()
             print("---------------------------- Predictions ----------------------------")
             # Predict Likely Countries, Along With Addresses
-            top_countries, specific_locations = get_likely_countries(custom_classification_model)
+            top_countries, top_flags, specific_locations = get_likely_countries(continent_nn, flags_nn)
             print()
             print("-- Top Countries --")
             print(top_countries)
+            print()
+            print("-- Top Flags --")
+            print(top_flags)
             print()
             print("-- Specific Locations --")
             print(specific_locations)
@@ -103,13 +112,14 @@ def run_live():
 
 
 
-def get_likely_countries(custom_classification_model):
+def get_likely_countries(continent_nn, flags_nn):
 
     # Returns ->  1) Geolocated Locations (Ultra Specific), 2) Countries Identified (General Regions with Probabilities)
     geolocated_locations = []
     top_continents_general = {}
+    top_flags_general = {}
 
-    # ----------------------- NN CLASSIFICATION -----------------------
+    # ----------------------- NN Continent CLASSIFICATION -----------------------
     # Continent Folders
     continent_folders = glob.glob('data/images_sorted_by_continent/*')
     # Load Image Dataset
@@ -119,7 +129,8 @@ def get_likely_countries(custom_classification_model):
                                            batch_size=len(glob.glob(images_to_analyze_folder + "/*")),
                                            shuffle = False,
                                            seed=42,
-                                           color_mode="rgb")
+                                           color_mode="rgb",
+                                           crop_to_aspect_ratio=True)
     # Initialize Top Countries
     top_continents_nn = {}
     # Test Each Image
@@ -127,7 +138,7 @@ def get_likely_countries(custom_classification_model):
         tensor_list = tensor.numpy()
         for tensor in tensor_list:
             # Run Through Model
-            prediction = custom_classification_model.predict(tf.expand_dims(tensor, axis=0))
+            prediction = continent_nn.predict(tf.expand_dims(tensor, axis=0))
             # Print Continent Prediction
             for i in range(len(prediction[0])):
                 likely_index = np.argsort(prediction[0])[-(i+1)]
@@ -139,6 +150,36 @@ def get_likely_countries(custom_classification_model):
                 else:
                     top_continents_nn[continent_name] = confidence
 
+    # ----------------------- NN Flag CLASSIFICATION -----------------------
+    # Flag Folders
+    flag_folders = glob.glob('data/images_country_flags_modified/*')
+    # Load Image Dataset
+    dataset = image_dataset_from_directory(images_to_analyze_folder,
+                                           label_mode=None,
+                                           image_size=resize_size,
+                                           batch_size=len(glob.glob(images_to_analyze_folder + "/*")),
+                                           shuffle = False,
+                                           seed=42,
+                                           color_mode="rgb",
+                                           )  
+    # Initialize Top Countries
+    top_flags_nn = {}
+    # Test Each Image
+    for tensor in dataset.take(1):
+        tensor_list = tensor.numpy()
+        for tensor in tensor_list:
+            # Run Through Model
+            prediction = flags_nn.predict(tf.expand_dims(tensor, axis=0))
+            # Print Flag Prediction
+            for i in range(len(prediction[0])):
+                likely_index = np.argsort(prediction[0])[-(i+1)]
+                flag_name = flag_folders[likely_index].split('\\')[-1]
+                confidence = prediction[0][likely_index]
+                # Flag Name, Confidence
+                if flag_name in top_flags_nn.keys():
+                    top_flags_nn[flag_name] += confidence
+                else:
+                    top_flags_nn[flag_name] = confidence
 
     # ----------------------- Text Classification -----------------------
 
@@ -170,10 +211,14 @@ def get_likely_countries(custom_classification_model):
 
     # --------------------- Combine Variables --------------------
 
+    # Continents
     top_continents_general = top_continents_nn
+    # Flags to Country Names
+    for country, confidence in top_flags_nn.items():
+        top_flags_general[geoguesser_countries_full_map[country]] = confidence
 
     # Return
-    return top_continents_general, geolocated_locations
+    return top_continents_general, {k: top_flags_general[k] for k in list(top_flags_general)[:6]}, geolocated_locations
 
 # ---------------------Helper Methods--------------------
 
@@ -182,7 +227,7 @@ def initialize_drivers(num_drivers):
     # Resolution
     res_x = 1600; res_y = 800
     # Initialize Drivers
-    drivers = [Chrome("C:\\Selenium\\chromedriver.exe") for i in range(num_drivers)]
+    drivers = [Chrome(service=Service(ChromeDriverManager().install())) for i in range(num_drivers)]
     # All Open Google Maps
     for i in range(num_drivers):
         driver = drivers[i]

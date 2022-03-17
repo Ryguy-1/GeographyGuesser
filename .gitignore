@@ -2,11 +2,12 @@
 /data/images/*
 /data/images_sorted_by_country/*
 /data/images_sorted_by_continent/*
+/data/images_country_flags_original/*
+/data/images_country_flags_modified/*
 /data/urls_downloaded.json
 
 # Model Ignores
 /models/country_classifier_model/*
 /models/country_regression_models/*
-
-# API
-params.json
+/models/continent_classifier_model/*
+/models/flag_classifier_model/*
