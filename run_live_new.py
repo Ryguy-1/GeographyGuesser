@@ -268,9 +268,6 @@ def display_specific_locations(specific_locations, drivers):
             zoom_out.click()
             time.sleep(0.08)
 
-    # Wait to Look at Them
-    time.sleep(12)
-
 # Crops Images for Save with Text in Them Given User Defined Box
 class Cropper:
     def __init__(self):
