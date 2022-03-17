@@ -7,11 +7,10 @@ import spacy
 from spacy.language import Language
 import json
 # Text to Location
-from geopy.geocoders import Photon
-geolocator = Photon(user_agent="measurements")
+from geopy.geocoders import Nominatim
 
 # Load Google Cridentials For Vision API
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "C:\\Users\\Ryland Birchmeier\\Documents\\google_cloud_auth.json"# Load Once
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "C:\\Users\\rylan\\Documents\\google_cloud_auth.json"# Load Once
 
 # For Language Detection
 nlp = spacy.load("en_core_web_sm")
@@ -28,7 +27,7 @@ Language.factory("language_detector", func=get_lang_detector)
 nlp.add_pipe('language_detector', last=True)
 
 # Text to Location Geocoding
-locator = Photon(user_agent="myGeocoder")
+locator = Nominatim(user_agent="nomatim-geocoder-1")
 def text_to_location(text):
     location = locator.geocode(query=text, exactly_one=True)
     return location

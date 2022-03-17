@@ -7,3 +7,6 @@
 # Model Ignores
 /models/country_classifier_model/*
 /models/country_regression_models/*
+
+# API
+params.json

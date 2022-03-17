@@ -46,9 +46,14 @@ geoguesser_countries = json.load(open('data/countries_in_geoguesser.json')).keys
 country_to_lang_arr_map = json.load(open('data/country_to_languages.json'))
 
 
+
 def run_live():
     # Load Model
     custom_classification_model = keras.models.load_model(classification_model_path)
+
+    # Max Images
+    max_locations_shown = 2
+    drivers = initialize_drivers(max_locations_shown)
 
     # Images Currently Held
     image_counter = 0
@@ -72,7 +77,7 @@ def run_live():
             print(specific_locations)
             print("---------------------------------------------------------------------")
 
-            display_specific_locations(specific_locations, 2)
+            display_specific_locations(specific_locations, drivers)
 
         # Save New Image Screenshot
         elif keyboard.is_pressed('s'):
@@ -172,29 +177,34 @@ def get_likely_countries(custom_classification_model):
 
 # ---------------------Helper Methods--------------------
 
-# Displays Top Guesses Using Google Maps
-def display_specific_locations(specific_locations, num_displayed_max):
-    # Calculate how Many to Show
-    shown = 0
-    if num_displayed_max < len(specific_locations):
-        shown = num_displayed_max
-    else:
-        shown = len(specific_locations)
+# Initialize Drivers
+def initialize_drivers(num_drivers):
     # Resolution
-    res_x = 2560; res_y = 1440
+    res_x = 1600; res_y = 800
     # Initialize Drivers
-    drivers = [Chrome("C:\\Selenium\\chromedriver.exe") for i in range(shown)]
+    drivers = [Chrome("C:\\Selenium\\chromedriver.exe") for i in range(num_drivers)]
     # All Open Google Maps
-    for i in range(len(drivers)):
+    for i in range(num_drivers):
         driver = drivers[i]
-        driver.set_window_size(res_x, int(res_y/num_displayed_max))
-        driver.set_window_position(0, int(res_y/num_displayed_max)*i)
-    # All Search Individual Locations and Zoom Out
-    for i in range(shown):
-        driver = drivers[i]
-        # Search
+        driver.set_window_size(int(res_x/num_drivers), res_y)
+        driver.set_window_position(int(res_x/num_drivers)*i, 0)
         driver.get("https://www.google.com/maps")
-        time.sleep(3)
+    
+    # Return drivers
+    return drivers
+
+
+# Displays Top Guesses Using Google Maps
+def display_specific_locations(specific_locations, drivers):
+    # Search Num
+    search_num = 0
+    if len(specific_locations) >= len(drivers):
+        search_num = len(drivers)
+    else:
+        search_num = len(specific_locations)
+    # All Search Individual Locations and Zoom Out
+    for i in range(search_num):
+        driver = drivers[i]
         # Get Search Bar
         search_bar_element = driver.find_element(By.ID, "searchboxinput")
         # Clear Search Bar
@@ -206,10 +216,10 @@ def display_specific_locations(specific_locations, num_displayed_max):
         # Search
         search_bar_element.send_keys(Keys.ENTER)
         # Wait for Load
-        time.sleep(3)
+        time.sleep(0.2)
         # Find Zoom Out
         zoom_out = driver.find_element(By.ID, "widget-zoom-out")
-        for i in range(8):
+        for i in range(14):
             zoom_out.click()
             time.sleep(0.08)
 
