@@ -10,7 +10,7 @@ import json
 from geopy.geocoders import Nominatim
 
 # Load Google Cridentials For Vision API
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "C:\\Users\\Ryland Birchmeier\\Documents\\google_cloud_auth.json"# Load Once
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "C:\\Users\\rylan\\Documents\\google_cloud_auth.json"# Load Once
 
 # For Language Detection
 nlp = spacy.load("en_core_web_sm")

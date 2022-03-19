@@ -58,7 +58,7 @@ def run_live():
 
 
     # Max Images
-    max_locations_shown = 2
+    max_locations_shown = 1
     drivers = initialize_drivers(max_locations_shown)
 
     # Images Currently Held
@@ -66,7 +66,7 @@ def run_live():
     while True:
         
         # Predict Image Folder
-        if keyboard.is_pressed('p'):
+        if keyboard.is_pressed('a'):
             if len(glob.glob(images_to_analyze_folder + "/*")) == 0:
                 print("Press 'S' To Save an Image First")
                 time.sleep(1)
@@ -106,8 +106,10 @@ def run_live():
             # Remove All Images
             [os.remove(location) for location in image_locations]
             image_counter = 0
+            print("--Removed Cached Images--")
+            time.sleep(0.5)
 
-        time.sleep(0.05)
+        time.sleep(0.03)
 
 
 
@@ -225,7 +227,7 @@ def get_likely_countries(continent_nn, flags_nn):
 # Initialize Drivers
 def initialize_drivers(num_drivers):
     # Resolution
-    res_x = 1600; res_y = 800
+    res_x = 1700/2-175; res_y = 500
     # Initialize Drivers
     drivers = [Chrome(service=Service(ChromeDriverManager().install())) for i in range(num_drivers)]
     # All Open Google Maps
@@ -261,12 +263,12 @@ def display_specific_locations(specific_locations, drivers):
         # Search
         search_bar_element.send_keys(Keys.ENTER)
         # Wait for Load
-        time.sleep(0.2)
+        time.sleep(0.3)
         # Find Zoom Out
         zoom_out = driver.find_element(By.ID, "widget-zoom-out")
         for i in range(14):
             zoom_out.click()
-            time.sleep(0.08)
+            time.sleep(0.1)
 
 # Crops Images for Save with Text in Them Given User Defined Box
 class Cropper:
